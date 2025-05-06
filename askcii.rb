@@ -29,7 +29,7 @@ prompt = ""
 prompt = "With the following text:\n\n#{input}\n\n" if input
 prompt += instruction
 
-chat = RubyLLM::Chat.new(model: 'gemma3:1b', provider: :openai, assume_model_exists: true)
+chat = RubyLLM::Chat.new(model: 'gemma3:12b', provider: :openai, assume_model_exists: true)
 
 chat.ask(prompt) do |chunk|
   print chunk.content
