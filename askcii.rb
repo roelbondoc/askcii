@@ -19,9 +19,9 @@ instruction = ARGV.join(" ")
 
 if instruction.empty?
   puts "Usage:"
-  puts "  ruby llm_prompt.rb 'Your prompt here'"
-  puts "  echo 'Your prompt here' | ruby llm_prompt.rb 'Your prompt here'"
-  puts "  ruby llm_prompt.rb `Your prompt here` < prompt.txt"
+  puts "  askcii 'Your prompt here'"
+  puts "  echo 'Your prompt here' | askcii 'Your prompt here'"
+  puts "  askcii `Your prompt here` < prompt.txt"
   exit 1
 end
 
