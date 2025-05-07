@@ -18,6 +18,7 @@ ActiveRecord::Migration.verbose = false
 unless ActiveRecord::Base.connection.table_exists?(:chats)
   ActiveRecord::Migration.create_table :chats do |t|
     t.string :model_id
+    t.string :context
     t.timestamps
   end
 end
@@ -99,7 +100,8 @@ prompt = ""
 prompt = "With the following text:\n\n#{input}\n\n" if input
 prompt += instruction
 
-chat = Chat.create(model_id: 'gemma3:12b')
+working_directory = Dir.pwd
+chat = Chat.find_or_create_by(context: working_directory, model_id: 'gemma3:12b')
 
 chat.ask(prompt) do |chunk|
   print chunk.content
