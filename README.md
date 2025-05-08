@@ -1,0 +1,45 @@
+# Askcii
+
+A command-line application for interacting with LLM models in a terminal-friendly way.
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'askcii'
+```
+
+And then execute:
+
+    $ bundle install
+
+Or install it yourself as:
+
+    $ gem install askcii
+
+## Usage
+
+```
+# Basic usage
+askcii 'Your prompt here'
+
+# Pipe input
+echo 'Your context text' | askcii 'Your prompt here'
+
+# File input
+askcii 'Your prompt here' < input.txt
+
+# Set a custom session ID to maintain conversation context
+ASKCII_SESSION_ID="project-research" askcii 'What did we talk about earlier?'
+```
+
+## Development
+
+After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+
+To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+
+## License
+
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).

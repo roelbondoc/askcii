@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+# Find the right load path
+$LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
+require "askcii"
+
+Askcii.setup_database
+Askcii.configure_llm
+
+input = nil
+
+if !STDIN.tty?
+  input = STDIN.read
+end
+
+prompt = ARGV.join(" ")
+
+if prompt.empty?
+  puts "Usage:"
+  puts "  askcii 'Your prompt here'"
+  puts "  echo 'Your prompt here' | askcii 'Your prompt here'"
+  puts "  askcii `Your prompt here` < prompt.txt"
+  exit 1
+end
+
+context = ENV['ASKCII_SESSION'] || Dir.pwd
+chat = Askcii::Chat.find_or_create_by(context: context, model_id: 'gemma3:12b')
+
+chat.with_instructions "You are a command line application. Your responses should be suitable to be read in a terminal. Your responses should only include the necessary text.", replace: true
+prompt = "With the following text:\n\n#{input}\n\n#{prompt}" if input
+
+chat.ask(prompt) do |chunk|
+  print chunk.content
+end
+puts ""
