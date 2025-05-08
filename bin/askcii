@@ -26,7 +26,7 @@ end
 context = ENV['ASKCII_SESSION'] || Dir.pwd
 chat = Askcii::Chat.find_or_create_by(context: context, model_id: 'gemma3:12b')
 
-chat.with_instructions "You are a command line application. Your responses should be suitable to be read in a terminal. Your responses should only include the necessary text.", replace: true
+chat.with_instructions "You are a command line application. Your responses should be suitable to be read in a terminal. Your responses should only include the necessary text. Do not include any explanations unless prompted for it.", replace: true
 prompt = "With the following text:\n\n#{input}\n\n#{prompt}" if input
 
 chat.ask(prompt) do |chunk|
