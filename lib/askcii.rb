@@ -2,6 +2,7 @@ require 'tempfile'
 require 'sqlite3'
 require 'active_record'
 require 'active_support'
+require 'fileutils'
 require_relative './askcii/version'
 
 # Add ruby_llm dependency paths
@@ -13,11 +14,18 @@ require File.join(File.dirname(ruby_llm_path), 'ruby_llm/active_record/acts_as')
 module Askcii
   class Error < StandardError; end
   
+  # Get the path to the database file
+  def self.db_path
+    db_dir = File.join(ENV['HOME'], '.local', 'share', 'askcii')
+    FileUtils.mkdir_p(db_dir) unless Dir.exist?(db_dir)
+    File.join(db_dir, 'chats.db')
+  end
+
   # Initialize the database
   def self.setup_database
     ActiveRecord::Base.establish_connection(
       adapter: "sqlite3",
-      database: "askcii.db"
+      database: db_path
     )
     
     ActiveRecord::Migration.verbose = false
