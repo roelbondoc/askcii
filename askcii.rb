@@ -86,9 +86,9 @@ if !STDIN.tty?
   input = STDIN.read
 end
 
-instruction = ARGV.join(" ")
+prompt = ARGV.join(" ")
 
-if instruction.empty?
+if prompt.empty?
   puts "Usage:"
   puts "  askcii 'Your prompt here'"
   puts "  echo 'Your prompt here' | askcii 'Your prompt here'"
@@ -96,12 +96,11 @@ if instruction.empty?
   exit 1
 end
 
-prompt = ""
-prompt = "With the following text:\n\n#{input}\n\n" if input
-prompt += instruction
+context = ENV['ASKCII_SESSION_ID'] || Dir.pwd
+chat = Chat.find_or_create_by(context: context, model_id: 'gemma3:12b')
 
-working_directory = Dir.pwd
-chat = Chat.find_or_create_by(context: working_directory, model_id: 'gemma3:12b')
+chat.with_instructions "You are a helpful command line application. Your responses should be suitable to be read in a terminal.", replace: true
+prompt = "With the following text:\n\n#{input}\n\n#{prompt}" if input
 
 chat.ask(prompt) do |chunk|
   print chunk.content
