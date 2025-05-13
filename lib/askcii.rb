@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-require 'ruby_llm'
 require 'tempfile'
 require 'sqlite3'
 require 'active_record'
 require 'active_support'
 require 'fileutils'
+require 'ruby_llm'
+require 'ruby_llm/model_info'
+require 'ruby_llm/active_record/acts_as'
 require_relative './askcii/version'
 
 module Askcii
