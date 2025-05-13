@@ -66,8 +66,8 @@ module Askcii
   def self.configure_llm
     RubyLLM.configure do |config|
       config.log_file = "/dev/null"
-      config.openai_api_key = "blank"
-      config.openai_api_base = "http://localhost:11434/v1"
+      config.openai_api_key = ENV['ASKCII_API_KEY'] || "blank"
+      config.openai_api_base = ENV['ASKCII_API_ENDPOINT'] || "http://localhost:11434/v1"
     end
   end
 end

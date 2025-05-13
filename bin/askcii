@@ -3,12 +3,47 @@
 # Find the right load path
 $LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
 require "askcii"
+require "optparse"
 
 Askcii.setup_database
 Askcii.configure_llm
 
-input = nil
+# Parse command-line options
+options = {}
+opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: askcii [options] 'Your prompt here'"
+  
+  opts.on("-r", "--last-response", "Output the last response") do
+    options[:last_response] = true
+  end
+  
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit
+  end
+end
 
+# Parse options, keeping remaining arguments in ARGV
+opt_parser.parse!
+
+context = ENV['ASKCII_SESSION']
+model_id = ENV['ASKCII_MODEL_ID']
+chat = Askcii::Chat.find_or_create_by(context: context, model_id: model_id)
+
+# Output last response if requested
+if options[:last_response]
+  last_message = chat.messages.where(role: "assistant").last
+  if last_message
+    puts last_message.content
+    exit 0
+  else
+    puts "No previous response found."
+    exit 1
+  end
+end
+
+# Process input
+input = nil
 if !STDIN.tty?
   input = STDIN.read
 end
@@ -17,14 +52,15 @@ prompt = ARGV.join(" ")
 
 if prompt.empty?
   puts "Usage:"
-  puts "  askcii 'Your prompt here'"
+  puts "  askcii [options] 'Your prompt here'"
   puts "  echo 'Your prompt here' | askcii 'Your prompt here'"
-  puts "  askcii `Your prompt here` < prompt.txt"
+  puts "  askcii 'Your prompt here' < prompt.txt"
+  puts "  askcii -r (to get the last response)"
+  puts "\nOptions:"
+  puts "  -r, --last-response   Output the last response"
+  puts "  -h, --help            Show help"
   exit 1
 end
-
-context = ENV['ASKCII_SESSION'] || Dir.pwd
-chat = Askcii::Chat.find_or_create_by(context: context, model_id: 'gemma3:12b')
 
 chat.with_instructions "You are a command line application. Your responses should be suitable to be read in a terminal. Your responses should only include the necessary text. Do not include any explanations unless prompted for it.", replace: true
 prompt = "With the following text:\n\n#{input}\n\n#{prompt}" if input
