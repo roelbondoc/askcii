@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+require 'ruby_llm'
 require 'tempfile'
 require 'sqlite3'
 require 'active_record'
@@ -5,15 +8,9 @@ require 'active_support'
 require 'fileutils'
 require_relative './askcii/version'
 
-# Add ruby_llm dependency paths
-# Note: You might want to make ruby_llm a proper gem dependency later
-ruby_llm_path = File.expand_path('../../ruby_llm/lib/ruby_llm', __FILE__)
-require ruby_llm_path
-require File.join(File.dirname(ruby_llm_path), 'ruby_llm/active_record/acts_as')
-
 module Askcii
   class Error < StandardError; end
-  
+
   # Get the path to the database file
   def self.db_path
     db_dir = File.join(ENV['HOME'], '.local', 'share', 'askcii')
@@ -24,12 +21,12 @@ module Askcii
   # Initialize the database
   def self.setup_database
     ActiveRecord::Base.establish_connection(
-      adapter: "sqlite3",
+      adapter: 'sqlite3',
       database: db_path
     )
-    
+
     ActiveRecord::Migration.verbose = false
-    
+
     unless ActiveRecord::Base.connection.table_exists?(:chats)
       ActiveRecord::Migration.create_table :chats do |t|
         t.string :model_id
@@ -37,7 +34,7 @@ module Askcii
         t.timestamps
       end
     end
-    
+
     unless ActiveRecord::Base.connection.table_exists?(:messages)
       ActiveRecord::Migration.create_table :messages do |t|
         t.references :chat, null: false, foreign_key: true
@@ -50,24 +47,24 @@ module Askcii
         t.timestamps
       end
     end
-    
-    unless ActiveRecord::Base.connection.table_exists?(:tool_calls)
-      ActiveRecord::Migration.create_table :tool_calls do |t|
-        t.references :message, null: false, foreign_key: true
-        t.string :tool_call_id, null: false
-        t.string :name, null: false
-        t.text :arguments, default: "{}"
-        t.timestamps
-      end
-      ActiveRecord::Migration.add_index :tool_calls, :tool_call_id
+
+    return if ActiveRecord::Base.connection.table_exists?(:tool_calls)
+
+    ActiveRecord::Migration.create_table :tool_calls do |t|
+      t.references :message, null: false, foreign_key: true
+      t.string :tool_call_id, null: false
+      t.string :name, null: false
+      t.text :arguments, default: '{}'
+      t.timestamps
     end
+    ActiveRecord::Migration.add_index :tool_calls, :tool_call_id
   end
-  
+
   def self.configure_llm
     RubyLLM.configure do |config|
-      config.log_file = "/dev/null"
-      config.openai_api_key = ENV['ASKCII_API_KEY'] || "blank"
-      config.openai_api_base = ENV['ASKCII_API_ENDPOINT'] || "http://localhost:11434/v1"
+      config.log_file = '/dev/null'
+      config.openai_api_key = ENV['ASKCII_API_KEY'] || 'blank'
+      config.openai_api_base = ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
     end
   end
 end
