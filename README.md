@@ -32,6 +32,35 @@ askcii 'Your prompt here' < input.txt
 
 # Set a custom session ID to maintain conversation context
 ASKCII_SESSION_ID="project-research" askcii 'What did we talk about earlier?'
+
+# Configure the API key, endpoint, and model ID
+askcii -c
+
+# Get the last response
+askcii -r
+```
+
+## Configuration
+
+You can configure your API key, endpoint, and model ID using the `-c` option:
+
+```
+$ askcii -c
+Configuring askcii...
+Enter API key (leave blank to keep current value): your_api_key_here
+Enter API endpoint (leave blank for default 'http://localhost:11434/v1'): https://api.example.com/v1
+Enter model ID (leave blank for default): gpt-4
+Configuration saved successfully!
+```
+
+Configuration settings are stored in a SQLite database located at `~/.local/share/askcii/chats.db`.
+
+You can also use environment variables to override the stored configuration:
+
+```
+ASKCII_API_KEY="your_api_key" askcii 'Hello!'
+ASKCII_API_ENDPOINT="https://api.example.com/v1" askcii 'Hello!'
+ASKCII_MODEL_ID="gpt-4" askcii 'Hello!'
 ```
 
 ## Development

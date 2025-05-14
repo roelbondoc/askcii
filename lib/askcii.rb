@@ -50,23 +50,43 @@ module Askcii
       end
     end
 
-    return if ActiveRecord::Base.connection.table_exists?(:tool_calls)
+    unless ActiveRecord::Base.connection.table_exists?(:tool_calls)
+      ActiveRecord::Migration.create_table :tool_calls do |t|
+        t.references :message, null: false, foreign_key: true
+        t.string :tool_call_id, null: false
+        t.string :name, null: false
+        t.text :arguments, default: '{}'
+        t.timestamps
+      end
+      ActiveRecord::Migration.add_index :tool_calls, :tool_call_id
+    end
 
-    ActiveRecord::Migration.create_table :tool_calls do |t|
-      t.references :message, null: false, foreign_key: true
-      t.string :tool_call_id, null: false
-      t.string :name, null: false
-      t.text :arguments, default: '{}'
+    # Create configurations table if it doesn't exist
+    return if ActiveRecord::Base.connection.table_exists?(:configs)
+
+    ActiveRecord::Migration.create_table :configs do |t|
+      t.string :key, null: false, index: { unique: true }
+      t.text :value, null: false
       t.timestamps
     end
-    ActiveRecord::Migration.add_index :tool_calls, :tool_call_id
   end
 
   def self.configure_llm
     RubyLLM.configure do |config|
       config.log_file = '/dev/null'
-      config.openai_api_key = ENV['ASKCII_API_KEY'] || 'blank'
-      config.openai_api_base = ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
+
+      # Try to get configuration from the database first, then fallback to ENV variables
+      config.openai_api_key = begin
+        Askcii::Config.api_key || ENV['ASKCII_API_KEY'] || 'blank'
+      rescue StandardError
+        ENV['ASKCII_API_KEY'] || 'blank'
+      end
+
+      config.openai_api_base = begin
+        Askcii::Config.api_endpoint || ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
+      rescue StandardError
+        ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
+      end
     end
   end
 end
@@ -75,3 +95,4 @@ end
 require_relative './askcii/models/chat'
 require_relative './askcii/models/message'
 require_relative './askcii/models/tool_call'
+require_relative './askcii/models/config'

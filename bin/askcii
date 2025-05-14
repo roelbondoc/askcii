@@ -18,6 +18,10 @@ opt_parser = OptionParser.new do |opts|
     options[:last_response] = true
   end
 
+  opts.on('-c', '--configure', 'Configure API key, endpoint, and model ID') do
+    options[:configure] = true
+  end
+
   opts.on('-h', '--help', 'Show this help message') do
     puts opts
     exit
@@ -27,8 +31,33 @@ end
 # Parse options, keeping remaining arguments in ARGV
 opt_parser.parse!
 
+# Handle configuration if requested
+if options[:configure]
+  puts 'Configuring askcii...'
+
+  # Prompt for API key
+  print 'Enter API key (leave blank to keep current value): '
+  api_key = gets.chomp
+
+  # Prompt for API endpoint
+  print "Enter API endpoint (leave blank for default 'http://localhost:11434/v1'): "
+  api_endpoint = gets.chomp
+
+  # Prompt for model ID
+  print 'Enter model ID (leave blank for default): '
+  model_id = gets.chomp
+
+  # Save configuration to database
+  Askcii::Config.set('api_key', api_key) unless api_key.empty?
+  Askcii::Config.set('api_endpoint', api_endpoint) unless api_endpoint.empty?
+  Askcii::Config.set('model_id', model_id) unless model_id.empty?
+
+  puts 'Configuration saved successfully!'
+  exit 0
+end
+
 context = ENV['ASKCII_SESSION']
-model_id = ENV['ASKCII_MODEL_ID']
+model_id = ENV['ASKCII_MODEL_ID'] || Askcii::Config.model_id
 chat = Askcii::Chat.find_or_create_by(context: context, model_id: model_id)
 
 # Output last response if requested
@@ -55,8 +84,10 @@ if prompt.empty?
   puts "  echo 'Your prompt here' | askcii 'Your prompt here'"
   puts "  askcii 'Your prompt here' < prompt.txt"
   puts '  askcii -r (to get the last response)'
+  puts '  askcii -c (to configure API key, endpoint, and model ID)'
   puts "\nOptions:"
   puts '  -r, --last-response   Output the last response'
+  puts '  -c, --configure       Configure API key, endpoint, and model ID'
   puts '  -h, --help            Show help'
   exit 1
 end
