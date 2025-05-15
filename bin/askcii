@@ -8,6 +8,7 @@ require 'optparse'
 
 Askcii.setup_database
 Askcii.configure_llm
+Askcii.require_models
 
 # Parse command-line options
 options = {}
@@ -36,15 +37,15 @@ if options[:configure]
   puts 'Configuring askcii...'
 
   # Prompt for API key
-  print 'Enter API key (leave blank to keep current value): '
+  print 'Enter API key: '
   api_key = gets.chomp
 
   # Prompt for API endpoint
-  print "Enter API endpoint (leave blank for default 'http://localhost:11434/v1'): "
+  print "Enter API endpoint: "
   api_endpoint = gets.chomp
 
   # Prompt for model ID
-  print 'Enter model ID (leave blank for default): '
+  print 'Enter model ID: '
   model_id = gets.chomp
 
   # Save configuration to database
@@ -57,8 +58,8 @@ if options[:configure]
 end
 
 context = ENV['ASKCII_SESSION']
-model_id = ENV['ASKCII_MODEL_ID'] || Askcii::Config.model_id
-chat = Askcii::Chat.find_or_create_by(context: context, model_id: model_id)
+model_id = Askcii::Config.model_id || ENV['ASKCII_MODEL_ID']
+chat = Askcii::Chat.find_or_create(context: context, model_id: model_id).to_llm
 
 # Output last response if requested
 if options[:last_response]
@@ -92,8 +93,7 @@ if prompt.empty?
   exit 1
 end
 
-chat.with_instructions 'You are a command line application. Your responses should be suitable to be read in a terminal. Your responses should only include the necessary text. Do not include any explanations unless prompted for it.',
-                       replace: true
+chat.with_instructions 'You are a command line application. Your responses should be suitable to be read in a terminal. Your responses should only include the necessary text. Do not include any explanations unless prompted for it.'
 prompt = "With the following text:\n\n#{input}\n\n#{prompt}" if input
 
 chat.ask(prompt) do |chunk|

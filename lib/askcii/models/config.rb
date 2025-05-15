@@ -1,29 +1,27 @@
 # frozen_string_literal: true
 
 module Askcii
-  class Config < ActiveRecord::Base
-    validates :key, presence: true, uniqueness: true
-    validates :value, presence: true
+  class Config < Sequel::Model(Askcii.database[:configs])
+    def self.set(key, value)
+      config = find_or_create(key: key)
+      config.update(value: value)
+    end
 
-    # Helper methods for common configuration values
-    class << self
-      def api_key
-        find_by(key: 'api_key')&.value
-      end
+    def self.get(key)
+      config = find(key: key)
+      config ? config.value : nil
+    end
 
-      def api_endpoint
-        find_by(key: 'api_endpoint')&.value
-      end
+    def self.api_key
+      get('api_key')
+    end
 
-      def model_id
-        find_by(key: 'model_id')&.value
-      end
+    def self.api_endpoint
+      get('api_endpoint')
+    end
 
-      def set(key, value)
-        config = find_or_initialize_by(key: key)
-        config.value = value
-        config.save
-      end
+    def self.model_id
+      get('model_id')
     end
   end
 end

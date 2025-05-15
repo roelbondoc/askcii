@@ -1,74 +1,50 @@
 # frozen_string_literal: true
 
-require 'tempfile'
-require 'sqlite3'
-require 'active_record'
-require 'active_support'
+require 'sequel'
 require 'fileutils'
 require 'ruby_llm'
 require 'ruby_llm/model_info'
-require 'ruby_llm/active_record/acts_as'
 require_relative './askcii/version'
 
 module Askcii
   class Error < StandardError; end
 
+  def self.database
+    @@database ||= Sequel.amalgalite(db_path)
+  end
+
   # Get the path to the database file
   def self.db_path
     db_dir = File.join(ENV['HOME'], '.local', 'share', 'askcii')
     FileUtils.mkdir_p(db_dir) unless Dir.exist?(db_dir)
-    File.join(db_dir, 'chats.db')
+    File.join(db_dir, 'askcii.db')
   end
 
   # Initialize the database
   def self.setup_database
-    ActiveRecord::Base.establish_connection(
-      adapter: 'sqlite3',
-      database: db_path
-    )
+    database.create_table :chats do
+      primary_key :id
+      String :model_id, null: true
+      String :context, null: true
+      Datetime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+    end unless database.table_exists?(:chats)
 
-    ActiveRecord::Migration.verbose = false
+    database.create_table :messages do
+      primary_key :id
+      foreign_key :chat_id, :chats, null: false
+      String :role, null: true
+      Text :content, null: true
+      String :model_id, null: true
+      Integer :input_tokens, null: true
+      Integer :output_tokens, null: true
+      Datetime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+    end unless database.table_exists?(:messages)
 
-    unless ActiveRecord::Base.connection.table_exists?(:chats)
-      ActiveRecord::Migration.create_table :chats do |t|
-        t.string :model_id
-        t.string :context
-        t.timestamps
-      end
-    end
-
-    unless ActiveRecord::Base.connection.table_exists?(:messages)
-      ActiveRecord::Migration.create_table :messages do |t|
-        t.references :chat, null: false, foreign_key: true
-        t.string :role
-        t.text :content
-        t.string :model_id
-        t.integer :input_tokens
-        t.integer :output_tokens
-        t.references :tool_call
-        t.timestamps
-      end
-    end
-
-    unless ActiveRecord::Base.connection.table_exists?(:tool_calls)
-      ActiveRecord::Migration.create_table :tool_calls do |t|
-        t.references :message, null: false, foreign_key: true
-        t.string :tool_call_id, null: false
-        t.string :name, null: false
-        t.text :arguments, default: '{}'
-        t.timestamps
-      end
-      ActiveRecord::Migration.add_index :tool_calls, :tool_call_id
-    end
-
-    # Create configurations table if it doesn't exist
-    return if ActiveRecord::Base.connection.table_exists?(:configs)
-
-    ActiveRecord::Migration.create_table :configs do |t|
-      t.string :key, null: false, index: { unique: true }
-      t.text :value, null: false
-      t.timestamps
-    end
+    database.create_table :configs do
+      primary_key :id
+      String :key, null: false, unique: true
+      Text :value, null: true
+    end unless database.table_exists?(:configs)
   end
 
   def self.configure_llm
@@ -89,10 +65,10 @@ module Askcii
       end
     end
   end
-end
 
-# Define model classes
-require_relative './askcii/models/chat'
-require_relative './askcii/models/message'
-require_relative './askcii/models/tool_call'
-require_relative './askcii/models/config'
+  def self.require_models
+    require_relative './askcii/models/chat'
+    require_relative './askcii/models/message'
+    require_relative './askcii/models/config'
+  end
+end

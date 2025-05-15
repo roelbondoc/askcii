@@ -26,10 +26,9 @@ Gem::Specification.new do |spec|
   spec.executables   = ['askcii']
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'activerecord'
-  spec.add_dependency 'activesupport'
+  spec.add_dependency 'sequel', '~> 5.92'
+  spec.add_dependency 'amalgalite', '~> 1.9'
   spec.add_dependency 'ruby_llm', '1.3.0rc1'
-  spec.add_dependency 'sqlite3'
 
   spec.add_development_dependency 'minitest', '~> 5.25'
   spec.add_development_dependency 'rake', '~> 13.0'
