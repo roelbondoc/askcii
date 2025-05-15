@@ -33,6 +33,9 @@ askcii 'Your prompt here' < input.txt
 # Set a custom session ID to maintain conversation context
 ASKCII_SESSION_ID="project-research" askcii 'What did we talk about earlier?'
 
+# Or add the following to your .bashrc or .zshrc to always start a new session
+export ASKCII_SESSION=$(openssl rand -hex 16)
+
 # Configure the API key, endpoint, and model ID
 askcii -c
 
@@ -47,13 +50,13 @@ You can configure your API key, endpoint, and model ID using the `-c` option:
 ```
 $ askcii -c
 Configuring askcii...
-Enter API key (leave blank to keep current value): your_api_key_here
-Enter API endpoint (leave blank for default 'http://localhost:11434/v1'): https://api.example.com/v1
-Enter model ID (leave blank for default): gpt-4
+Enter API key: your_api_key_here
+Enter API endpoint: http://localhost:11434/v1
+Enter model ID: gemma3:12b
 Configuration saved successfully!
 ```
 
-Configuration settings are stored in a SQLite database located at `~/.local/share/askcii/chats.db`.
+Configuration settings are stored in a SQLite database located at `~/.local/share/askcii/askcii.db`.
 
 You can also use environment variables to override the stored configuration:
 
