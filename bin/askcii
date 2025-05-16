@@ -15,6 +15,10 @@ options = {}
 opt_parser = OptionParser.new do |opts|
   opts.banner = "Usage: askcii [options] 'Your prompt here'"
 
+  opts.on('-p', '--private', 'Start a private session and do not record') do
+    options[:private] = true
+  end
+
   opts.on('-r', '--last-response', 'Output the last response') do
     options[:last_response] = true
   end
@@ -57,19 +61,30 @@ if options[:configure]
   exit 0
 end
 
-context = ENV['ASKCII_SESSION']
 model_id = Askcii::Config.model_id || ENV['ASKCII_MODEL_ID']
-chat = Askcii::Chat.find_or_create(context: context, model_id: model_id).to_llm
 
-# Output last response if requested
-if options[:last_response]
-  last_message = chat.messages.where(role: 'assistant').last
-  if last_message
-    puts last_message.content
-    exit 0
-  else
-    puts 'No previous response found.'
-    exit 1
+if options[:private]
+  context = SecureRandom.hex(8)
+  chat = RubyLLM.chat(
+    model: model_id,
+    provider: :openai,
+    assume_model_exists: true
+  )
+else
+  context = ENV['ASKCII_SESSION'] || SecureRandom.hex(8)
+  chat_record = Askcii::Chat.find_or_create(context: context, model_id: model_id)
+  chat = chat_record.to_llm
+
+  # Output last response if requested
+  if options[:last_response]
+    last_message = chat_record.messages.where(role: 'assistant').last
+    if last_message
+      puts last_message.content
+      exit 0
+    else
+      puts 'No previous response found.'
+      exit 1
+    end
   end
 end
 
@@ -84,9 +99,11 @@ if prompt.empty?
   puts "  askcii [options] 'Your prompt here'"
   puts "  echo 'Your prompt here' | askcii 'Your prompt here'"
   puts "  askcii 'Your prompt here' < prompt.txt"
+  puts '  askcii -p (start a private session)'
   puts '  askcii -r (to get the last response)'
   puts '  askcii -c (to configure API key, endpoint, and model ID)'
   puts "\nOptions:"
+  puts '  -p, --private         Start a private session and do not record'
   puts '  -r, --last-response   Output the last response'
   puts '  -c, --configure       Configure API key, endpoint, and model ID'
   puts '  -h, --help            Show help'
