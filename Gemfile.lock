@@ -3,7 +3,7 @@ PATH
   specs:
     askcii (0.1.0)
       amalgalite (~> 1.9)
-      ruby_llm (= 1.3.0rc1)
+      ruby_llm (= 1.3.0)
       sequel (~> 5.92)
 
 GEM
@@ -27,18 +27,20 @@ GEM
       faraday (~> 2.0)
     json (2.12.0)
     logger (1.7.0)
+    marcel (1.0.4)
     minitest (5.25.5)
     multipart-post (2.4.1)
     net-http (0.6.0)
       uri
     rake (13.2.1)
-    ruby_llm (1.3.0rc1)
+    ruby_llm (1.3.0)
       base64
       event_stream_parser (~> 1)
-      faraday (~> 2)
-      faraday-multipart (~> 1)
-      faraday-net_http (~> 3)
-      faraday-retry (~> 2)
+      faraday (>= 1.10.0)
+      faraday-multipart (>= 1)
+      faraday-net_http (>= 1)
+      faraday-retry (>= 1)
+      marcel (~> 1.0)
       zeitwerk (~> 2)
     sequel (5.92.0)
       bigdecimal
