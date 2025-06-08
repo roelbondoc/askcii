@@ -5,9 +5,9 @@
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'askcii'
 require 'optparse'
+require 'securerandom'
 
 Askcii.setup_database
-Askcii.configure_llm
 Askcii.require_models
 
 # Parse command-line options
@@ -23,8 +23,12 @@ opt_parser = OptionParser.new do |opts|
     options[:last_response] = true
   end
 
-  opts.on('-c', '--configure', 'Configure API key, endpoint, and model ID') do
+  opts.on('-c', '--configure', 'Manage configurations') do
     options[:configure] = true
+  end
+
+  opts.on('-m', '--model ID', 'Use specific configuration ID') do |model_id|
+    options[:model_config_id] = model_id
   end
 
   opts.on('-h', '--help', 'Show this help message') do
@@ -38,36 +42,172 @@ opt_parser.parse!
 
 # Handle configuration if requested
 if options[:configure]
-  puts 'Configuring askcii...'
+  puts 'Configuration Management'
+  puts '======================'
 
-  # Prompt for API key
-  print 'Enter API key: '
-  api_key = gets.chomp
+  configs = Askcii::Config.configurations
+  default_id = Askcii::Config.default_configuration_id
 
-  # Prompt for API endpoint
-  print "Enter API endpoint: "
-  api_endpoint = gets.chomp
+  if configs.empty?
+    puts 'No configurations found.'
+  else
+    puts 'Current configurations:'
+    configs.each do |config|
+      marker = config['id'] == default_id ? ' (default)' : ''
+      provider_info = config['provider'] ? " [#{config['provider']}]" : ''
+      puts "  #{config['id']}. #{config['name']}#{provider_info}#{marker}"
+    end
+    puts
+  end
 
-  # Prompt for model ID
-  print 'Enter model ID: '
-  model_id = gets.chomp
+  puts 'Options:'
+  puts '  1. Add new configuration'
+  puts '  2. Set default configuration'
+  puts '  3. Delete configuration'
+  puts '  4. Exit'
+  print 'Select option (1-4): '
 
-  # Save configuration to database
-  Askcii::Config.set('api_key', api_key) unless api_key.empty?
-  Askcii::Config.set('api_endpoint', api_endpoint) unless api_endpoint.empty?
-  Askcii::Config.set('model_id', model_id) unless model_id.empty?
+  choice = gets.chomp
 
-  puts 'Configuration saved successfully!'
+  case choice
+  when '1'
+    print 'Enter configuration name: '
+    name = gets.chomp
+
+    puts 'Select provider:'
+    puts '  1. OpenAI'
+    puts '  2. Anthropic'
+    puts '  3. Gemini'
+    puts '  4. DeepSeek'
+    puts '  5. OpenRouter'
+    puts '  6. Ollama (no API key needed)'
+    print 'Provider (1-6): '
+    provider_choice = gets.chomp
+
+    provider_map = {
+      '1' => 'openai',
+      '2' => 'anthropic', 
+      '3' => 'gemini',
+      '4' => 'deepseek',
+      '5' => 'openrouter',
+      '6' => 'ollama'
+    }
+
+    provider = provider_map[provider_choice]
+    if provider.nil?
+      puts 'Invalid provider selection.'
+    else
+      # Get API key unless it's Ollama
+      api_key = ''
+      api_key_valid = true
+      
+      if provider != 'ollama'
+        print "Enter #{provider.capitalize} API key: "
+        api_key = gets.chomp
+        
+        if api_key.empty?
+          puts 'API key is required for this provider.'
+          api_key_valid = false
+        end
+      end
+
+      if api_key_valid
+        # Set default endpoint based on provider
+        default_endpoints = {
+          'openai' => 'https://api.openai.com/v1',
+          'anthropic' => 'https://api.anthropic.com',
+          'gemini' => 'https://generativelanguage.googleapis.com/v1',
+          'deepseek' => 'https://api.deepseek.com/v1',
+          'openrouter' => 'https://openrouter.ai/api/v1',
+          'ollama' => 'http://localhost:11434/v1'
+        }
+
+        default_endpoint = default_endpoints[provider]
+        print "Enter API endpoint (default: #{default_endpoint}): "
+        api_endpoint = gets.chomp
+        api_endpoint = default_endpoint if api_endpoint.empty?
+
+        print 'Enter model ID: '
+        model_id = gets.chomp
+
+        if model_id.empty?
+          puts 'Model ID is required.'
+        else
+          name = model_id if name.empty?
+          Askcii::Config.add_configuration(name, api_key, api_endpoint, model_id, provider)
+          puts 'Configuration added successfully!'
+        end
+      end
+    end
+
+  when '2'
+    if configs.empty?
+      puts 'No configurations available to set as default.'
+    else
+      print 'Enter configuration ID to set as default: '
+      new_default = gets.chomp
+
+      if configs.any? { |c| c['id'] == new_default }
+        Askcii::Config.set_default_configuration(new_default)
+        puts "Configuration #{new_default} set as default."
+      else
+        puts 'Invalid configuration ID.'
+      end
+    end
+
+  when '3'
+    if configs.empty?
+      puts 'No configurations available to delete.'
+    else
+      print 'Enter configuration ID to delete: '
+      delete_id = gets.chomp
+
+      if configs.any? { |c| c['id'] == delete_id }
+        if Askcii::Config.delete_configuration(delete_id)
+          puts "Configuration #{delete_id} deleted successfully."
+        else
+          puts 'Failed to delete configuration.'
+        end
+      else
+        puts 'Invalid configuration ID.'
+      end
+    end
+
+  when '4'
+    puts 'Exiting.'
+  else
+    puts 'Invalid option.'
+  end
+
   exit 0
 end
 
-model_id = Askcii::Config.model_id || ENV['ASKCII_MODEL_ID']
+# Determine which configuration to use
+selected_config = if options[:model_config_id]
+                    Askcii::Config.get_configuration(options[:model_config_id])
+                  else
+                    Askcii::Config.current_configuration
+                  end
+
+# Fallback to environment variables if no config found
+if selected_config.nil?
+  selected_config = {
+    'api_key' => ENV['ASKCII_API_KEY'],
+    'api_endpoint' => ENV['ASKCII_API_ENDPOINT'],
+    'model_id' => ENV['ASKCII_MODEL_ID']
+  }
+end
+
+model_id = selected_config['model_id']
+
+# Configure RubyLLM with the selected configuration
+Askcii.configure_llm(selected_config)
 
 if options[:private]
-  context = SecureRandom.hex(8)
+  provider_symbol = selected_config['provider'] ? selected_config['provider'].to_sym : :openai
   chat = RubyLLM.chat(
     model: model_id,
-    provider: :openai,
+    provider: provider_symbol,
     assume_model_exists: true
   )
 else
@@ -101,11 +241,13 @@ if prompt.empty?
   puts "  askcii 'Your prompt here' < prompt.txt"
   puts '  askcii -p (start a private session)'
   puts '  askcii -r (to get the last response)'
-  puts '  askcii -c (to configure API key, endpoint, and model ID)'
+  puts '  askcii -c (manage configurations)'
+  puts '  askcii -m 2 (use configuration ID 2)'
   puts "\nOptions:"
   puts '  -p, --private         Start a private session and do not record'
   puts '  -r, --last-response   Output the last response'
-  puts '  -c, --configure       Configure API key, endpoint, and model ID'
+  puts '  -c, --configure       Manage configurations'
+  puts '  -m, --model ID        Use specific configuration ID'
   puts '  -h, --help            Show help'
   exit 1
 end

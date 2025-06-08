@@ -5,9 +5,12 @@ module Askcii
     one_to_many :messages, class: 'Askcii::Message', key: :chat_id
 
     def to_llm
+      current_config = Askcii::Config.current_configuration
+      provider_symbol = current_config['provider'] ? current_config['provider'].to_sym : :openai
+      
       @chat = RubyLLM.chat(
         model: model_id,
-        provider: :openai,
+        provider: provider_symbol,
         assume_model_exists: true
       )
       messages.each do |msg|

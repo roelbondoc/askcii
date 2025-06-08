@@ -3,7 +3,6 @@
 require 'sequel'
 require 'fileutils'
 require 'ruby_llm'
-require 'ruby_llm/model_info'
 require_relative './askcii/version'
 
 module Askcii
@@ -22,46 +21,75 @@ module Askcii
 
   # Initialize the database
   def self.setup_database
-    database.create_table :chats do
-      primary_key :id
-      String :model_id, null: true
-      String :context, null: true
-      Datetime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
-    end unless database.table_exists?(:chats)
+    unless database.table_exists?(:chats)
+      database.create_table :chats do
+        primary_key :id
+        String :model_id, null: true
+        String :context, null: true
+        Datetime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+      end
+    end
 
-    database.create_table :messages do
-      primary_key :id
-      foreign_key :chat_id, :chats, null: false
-      String :role, null: true
-      Text :content, null: true
-      String :model_id, null: true
-      Integer :input_tokens, null: true
-      Integer :output_tokens, null: true
-      Datetime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
-    end unless database.table_exists?(:messages)
+    unless database.table_exists?(:messages)
+      database.create_table :messages do
+        primary_key :id
+        foreign_key :chat_id, :chats, null: false
+        String :role, null: true
+        Text :content, null: true
+        String :model_id, null: true
+        Integer :input_tokens, null: true
+        Integer :output_tokens, null: true
+        Datetime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+      end
+    end
+
+    return if database.table_exists?(:configs)
 
     database.create_table :configs do
       primary_key :id
       String :key, null: false, unique: true
       Text :value, null: true
-    end unless database.table_exists?(:configs)
+    end
   end
 
-  def self.configure_llm
+  def self.configure_llm(selected_config = nil)
     RubyLLM.configure do |config|
       config.log_file = '/dev/null'
 
-      # Try to get configuration from the database first, then fallback to ENV variables
-      config.openai_api_key = begin
-        Askcii::Config.api_key || ENV['ASKCII_API_KEY'] || 'blank'
-      rescue StandardError
-        ENV['ASKCII_API_KEY'] || 'blank'
-      end
+      if selected_config
+        provider = selected_config['provider'] || 'openai'
+        api_key = selected_config['api_key']
+        
+        # Set the appropriate API key based on provider
+        case provider.downcase
+        when 'openai'
+          config.openai_api_key = api_key || 'blank'
+          config.openai_api_base = selected_config['api_endpoint'] || 'https://api.openai.com/v1'
+        when 'anthropic'
+          config.anthropic_api_key = api_key || 'blank'
+        when 'gemini'
+          config.gemini_api_key = api_key || 'blank'
+        when 'deepseek'
+          config.deepseek_api_key = api_key || 'blank'
+        when 'openrouter'
+          config.openrouter_api_key = api_key || 'blank'
+        when 'ollama'
+          # Ollama doesn't need an API key
+          config.openai_api_base = selected_config['api_endpoint'] || 'http://localhost:11434/v1'
+        end
+      else
+        # Legacy configuration fallback
+        config.openai_api_key = begin
+          Askcii::Config.api_key || ENV['ASKCII_API_KEY'] || 'blank'
+        rescue StandardError
+          ENV['ASKCII_API_KEY'] || 'blank'
+        end
 
-      config.openai_api_base = begin
-        Askcii::Config.api_endpoint || ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
-      rescue StandardError
-        ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
+        config.openai_api_base = begin
+          Askcii::Config.api_endpoint || ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
+        rescue StandardError
+          ENV['ASKCII_API_ENDPOINT'] || 'http://localhost:11434/v1'
+        end
       end
     end
   end

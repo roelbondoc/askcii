@@ -7,7 +7,7 @@ module Askcii
     def to_llm
       RubyLLM::Message.new(
         role: role.to_sym,
-        content: content.to_s.encode("UTF-8", undef: :replace),
+        content: content.to_s.encode('UTF-8', undef: :replace),
         tool_calls: {},
         tool_call_id: nil,
         input_tokens: input_tokens,
