@@ -59,7 +59,7 @@ module Askcii
       if selected_config
         provider = selected_config['provider'] || 'openai'
         api_key = selected_config['api_key']
-        
+
         # Set the appropriate API key based on provider
         case provider.downcase
         when 'openai'
@@ -98,5 +98,9 @@ module Askcii
     require_relative './askcii/models/chat'
     require_relative './askcii/models/message'
     require_relative './askcii/models/config'
+  end
+
+  def self.require_application
+    require_relative './askcii/application'
   end
 end

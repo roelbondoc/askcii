@@ -7,7 +7,7 @@ module Askcii
     def to_llm
       current_config = Askcii::Config.current_configuration
       provider_symbol = current_config['provider'] ? current_config['provider'].to_sym : :openai
-      
+
       @chat = RubyLLM.chat(
         model: model_id,
         provider: provider_symbol,
