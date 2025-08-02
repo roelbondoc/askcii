@@ -14,6 +14,7 @@ GEM
     arrayfields (4.9.2)
     base64 (0.2.0)
     bigdecimal (3.1.9)
+    csv (3.3.5)
     event_stream_parser (1.0.0)
     faraday (2.13.1)
       faraday-net_http (>= 2.0, < 3.5)
@@ -32,6 +33,7 @@ GEM
     multipart-post (2.4.1)
     net-http (0.6.0)
       uri
+    ostruct (0.6.3)
     rake (13.2.1)
     ruby_llm (1.5.1)
       base64
@@ -61,7 +63,9 @@ PLATFORMS
 
 DEPENDENCIES
   askcii!
+  csv (~> 3.0)
   minitest (~> 5.25)
+  ostruct (~> 0.6)
   rake (~> 13.0)
 
 BUNDLED WITH
