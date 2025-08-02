@@ -16,7 +16,7 @@ module Askcii
       model_id = @selected_config['model_id']
       chat_record = Askcii::Chat.find_or_create(context: context, model_id: model_id)
 
-      last_message = chat_record.messages.where(role: 'assistant').last
+      last_message = chat_record.messages.select { |msg| msg.role == 'assistant' }.last
       if last_message
         puts last_message.content
         exit 0
