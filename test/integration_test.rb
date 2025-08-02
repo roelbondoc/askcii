@@ -7,7 +7,7 @@ class IntegrationTest < Minitest::Test
     super
     Askcii.require_models
     Askcii.require_application
-    
+
     # Set up a minimal working configuration
     @test_config = {
       'name' => 'Test Config',
@@ -23,11 +23,11 @@ class IntegrationTest < Minitest::Test
     assert Askcii.database.table_exists?(:chats)
     assert Askcii.database.table_exists?(:messages)
     assert Askcii.database.table_exists?(:configs)
-    
+
     # Test model creation
     chat = Askcii::Chat.create(context: 'test', model_id: 'gpt-4')
     message = chat.add_message(role: 'user', content: 'test', model_id: 'gpt-4')
-    
+
     assert_instance_of Askcii::Chat, chat
     assert_instance_of Askcii::Message, message
     assert_equal 1, chat.messages.length
@@ -42,10 +42,10 @@ class IntegrationTest < Minitest::Test
       @test_config['model_id'],
       @test_config['provider']
     )
-    
+
     # Set as default
     Askcii::Config.set_default_configuration('1')
-    
+
     # Verify configuration
     config = Askcii::Config.current_configuration
     assert_equal @test_config['name'], config['name']
@@ -56,26 +56,26 @@ class IntegrationTest < Minitest::Test
     # Create a chat session
     context = 'integration_test'
     chat = Askcii::Chat.find_or_create(context: context, model_id: 'gpt-4')
-    
+
     # Add user message
-    user_message = chat.add_message(
+    chat.add_message(
       role: 'user',
       content: 'Hello, how are you?',
       model_id: 'gpt-4'
     )
-    
+
     # Add assistant message
-    assistant_message = chat.add_message(
+    chat.add_message(
       role: 'assistant',
       content: 'I am doing well, thank you!',
       model_id: 'gpt-4'
     )
-    
+
     # Verify messages are persisted
     reloaded_chat = Askcii::Chat.find_or_create(context: context, model_id: 'gpt-4')
     assert_equal chat.id, reloaded_chat.id
     assert_equal 2, reloaded_chat.messages.length
-    
+
     # Test last response functionality
     last_assistant_message = reloaded_chat.messages.select { |msg| msg.role == 'assistant' }.last
     assert_equal 'I am doing well, thank you!', last_assistant_message.content
@@ -105,11 +105,11 @@ class IntegrationTest < Minitest::Test
         expectations: { configure: true }
       }
     ]
-    
+
     test_cases.each do |test_case|
       cli = Askcii::CLI.new(test_case[:args])
       cli.parse!
-      
+
       test_case[:expectations].each do |method, expected_value|
         case method
         when :help
@@ -133,16 +133,16 @@ class IntegrationTest < Minitest::Test
     # Test invalid JSON in configuration
     Askcii::Config.set('config_invalid', 'invalid json')
     assert_equal [], Askcii::Config.configurations
-    
+
     # Test missing configuration
     assert_nil Askcii::Config.get_configuration('999')
-    
+
     # Test invalid CLI options
     cli = Askcii::CLI.new(['--invalid-option'])
     assert_raises(OptionParser::InvalidOption) do
       cli.parse!
     end
-    
+
     # Test missing model argument
     cli = Askcii::CLI.new(['--model'])
     assert_raises(OptionParser::MissingArgument) do
@@ -155,15 +155,15 @@ class IntegrationTest < Minitest::Test
     Askcii::Config.configurations.each do |config|
       Askcii::Config.delete_configuration(config['id'])
     end
-    
+
     # Set environment variables
     ENV['ASKCII_API_KEY'] = 'env_api_key'
     ENV['ASKCII_API_ENDPOINT'] = 'env_endpoint'
     ENV['ASKCII_MODEL_ID'] = 'env_model'
-    
+
     app = Askcii::Application.new(['test'])
     config = app.send(:determine_configuration)
-    
+
     assert_equal 'env_api_key', config['api_key']
     assert_equal 'env_endpoint', config['api_endpoint']
     assert_equal 'env_model', config['model_id']
@@ -175,11 +175,11 @@ class IntegrationTest < Minitest::Test
 
   def test_unicode_and_encoding_handling
     chat = create_test_chat
-    
+
     # Test various unicode content
-    unicode_content = "Hello 👋 World! Émojis and spëcial characters: 中文 العربية"
+    unicode_content = 'Hello 👋 World! Émojis and spëcial characters: 中文 العربية'
     message = create_test_message(chat, content: unicode_content)
-    
+
     llm_message = message.to_llm
     assert_equal unicode_content, llm_message.content
     assert llm_message.content.valid_encoding?
@@ -195,15 +195,15 @@ class IntegrationTest < Minitest::Test
       'openai'
     )
     Askcii::Config.set_default_configuration('1')
-    
+
     # Test private session
     app = Askcii::Application.new(['--private', 'test', 'prompt'])
-    
-    mock_ruby_llm_chat do |mock_chat|
+
+    mock_ruby_llm_chat do |_mock_chat|
       output = capture_stdout do
         app.run
       end
-      
+
       assert_includes output, 'Test response'
     end
   end
@@ -211,14 +211,14 @@ class IntegrationTest < Minitest::Test
   def test_session_context_handling
     # Test with custom session
     ENV['ASKCII_SESSION'] = 'custom_session_123'
-    
+
     chat1 = Askcii::Chat.find_or_create(context: 'custom_session_123', model_id: 'gpt-4')
     chat1.add_message(role: 'user', content: 'First message', model_id: 'gpt-4')
-    
+
     # Create another chat with different session
     ENV['ASKCII_SESSION'] = 'different_session'
     chat2 = Askcii::Chat.find_or_create(context: 'different_session', model_id: 'gpt-4')
-    
+
     refute_equal chat1.id, chat2.id
     assert_equal 1, chat1.messages.length
     assert_equal 0, chat2.messages.length
@@ -231,7 +231,7 @@ class IntegrationTest < Minitest::Test
     chats_count = Askcii::Chat.count
     configs_count = Askcii::Config.count
     messages_count = Askcii::Message.count
-    
+
     # Should start with empty database in each test
     assert_equal 0, chats_count
     assert_equal 0, configs_count

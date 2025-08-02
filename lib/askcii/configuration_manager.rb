@@ -20,6 +20,67 @@ module Askcii
       'ollama' => 'http://localhost:11434/v1'
     }.freeze
 
+    PROVIDER_MODELS = {
+      'openai' => {
+        default: 'gpt-4o',
+        models: [
+          'gpt-4o',
+          'gpt-4o-mini',
+          'gpt-4-turbo',
+          'gpt-4',
+          'gpt-3.5-turbo'
+        ]
+      },
+      'anthropic' => {
+        default: 'claude-3-5-sonnet-20241022',
+        models: [
+          'claude-3-5-sonnet-20241022',
+          'claude-3-5-haiku-20241022',
+          'claude-3-opus-20240229',
+          'claude-3-sonnet-20240229',
+          'claude-3-haiku-20240307'
+        ]
+      },
+      'gemini' => {
+        default: 'gemini-pro',
+        models: [
+          'gemini-pro',
+          'gemini-pro-vision',
+          'gemini-1.5-pro',
+          'gemini-1.5-flash'
+        ]
+      },
+      'deepseek' => {
+        default: 'deepseek-chat',
+        models: %w[
+          deepseek-chat
+          deepseek-coder
+        ]
+      },
+      'openrouter' => {
+        default: 'anthropic/claude-3.5-sonnet',
+        models: [
+          'anthropic/claude-3.5-sonnet',
+          'openai/gpt-4o',
+          'google/gemini-pro',
+          'meta-llama/llama-3.1-405b-instruct',
+          'anthropic/claude-3-opus',
+          'openai/gpt-4-turbo'
+        ]
+      },
+      'ollama' => {
+        default: 'llama3.2',
+        models: [
+          'llama3.2',
+          'llama3.1',
+          'mistral',
+          'codellama',
+          'phi3',
+          'gemma2'
+        ]
+      }
+    }.freeze
+
     def run
       show_current_configurations
       show_menu
@@ -85,7 +146,7 @@ module Askcii
       return unless api_key || provider == 'ollama'
 
       endpoint = get_api_endpoint(provider)
-      model_id = get_model_id
+      model_id = get_model_id(provider)
 
       return unless model_id
 
@@ -136,16 +197,48 @@ module Askcii
       api_endpoint.empty? ? default_endpoint : api_endpoint
     end
 
-    def get_model_id
-      print 'Enter model ID: '
-      model_id = $stdin.gets.chomp
+    def get_model_id(provider)
+      provider_config = PROVIDER_MODELS[provider]
 
-      if model_id.empty?
-        puts 'Model ID is required.'
-        return nil
+      if provider_config
+        default_model = provider_config[:default]
+        available_models = provider_config[:models]
+
+        puts "\nAvailable models for #{provider.capitalize}:"
+        available_models.each_with_index do |model, index|
+          marker = model == default_model ? ' (recommended)' : ''
+          puts "  #{index + 1}. #{model}#{marker}"
+        end
+
+        puts "  #{available_models.length + 1}. Enter custom model ID"
+        print "\nSelect model (1-#{available_models.length + 1}) or press Enter for default [#{default_model}]: "
+
+        choice = $stdin.gets.chomp
+
+        if choice.empty?
+          default_model
+        elsif choice.to_i.between?(1, available_models.length)
+          available_models[choice.to_i - 1]
+        elsif choice.to_i == available_models.length + 1
+          print 'Enter custom model ID: '
+          custom_model = $stdin.gets.chomp
+          custom_model.empty? ? nil : custom_model
+        else
+          puts 'Invalid selection.'
+          nil
+        end
+      else
+        # Fallback for unknown providers
+        print 'Enter model ID: '
+        model_id = $stdin.gets.chomp
+
+        if model_id.empty?
+          puts 'Model ID is required.'
+          return nil
+        end
+
+        model_id
       end
-
-      model_id
     end
 
     def set_default_configuration

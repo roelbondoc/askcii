@@ -30,7 +30,7 @@ module Askcii
       chat_session.handle_last_response if @cli.last_response?
 
       prompt, input = determine_prompt_and_input
-      
+
       if prompt.empty? && input.nil?
         puts @cli.usage_message
         exit 1
@@ -64,7 +64,7 @@ module Askcii
 
     def determine_prompt_and_input
       stdin_content = read_stdin_input
-      
+
       if @cli.prompt.empty? && stdin_content
         # No prompt provided via args, use stdin as prompt
         [stdin_content.strip, nil]

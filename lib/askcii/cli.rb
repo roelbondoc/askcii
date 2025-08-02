@@ -23,7 +23,7 @@ module Askcii
     end
 
     def show_usage?
-      false  # Usage logic is now handled in Application class
+      false # Usage logic is now handled in Application class
     end
 
     def configure?
