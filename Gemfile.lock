@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    askcii (0.2.0)
+    askcii (0.3.0)
       amalgalite (~> 1.9)
       ruby_llm (= 1.5.1)
       sequel (~> 5.92)
