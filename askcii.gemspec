@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name          = 'askcii'
   spec.version       = Askcii::VERSION
   spec.authors       = ['Roel Bondoc']
-  spec.email         = ['roelbondoc@example.com']
+  spec.email         = ['rsbondoc@gmail.com']
 
   spec.summary       = 'Command line application for LLM interactions'
   spec.description   = 'A terminal-friendly interface for interacting with LLM models'
@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'amalgalite', '~> 1.9'
-  spec.add_dependency 'ruby_llm', '1.3.0'
+  spec.add_dependency 'ruby_llm', '1.5.1'
   spec.add_dependency 'sequel', '~> 5.92'
 
   spec.add_development_dependency 'minitest', '~> 5.25'
