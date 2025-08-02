@@ -23,7 +23,7 @@ module Askcii
     end
 
     def show_usage?
-      @prompt.empty? && !configure? && !last_response?
+      false  # Usage logic is now handled in Application class
     end
 
     def configure?
@@ -50,8 +50,10 @@ module Askcii
       <<~USAGE
         Usage:
           askcii [options] 'Your prompt here'
-          echo 'Your prompt here' | askcii 'Your prompt here'
-          askcii 'Your prompt here' < prompt.txt
+          echo 'Your prompt here' | askcii                    # Use piped text as prompt
+          echo 'Context text' | askcii 'Your prompt here'     # Use piped text as context
+          askcii 'Your prompt here' < prompt.txt              # Use file content as context
+          cat prompt.txt | askcii                             # Use file content as prompt
           askcii -p (start a private session)
           askcii -r (to get the last response)
           askcii -c (manage configurations)

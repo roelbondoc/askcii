@@ -121,7 +121,8 @@ class ComprehensiveTest < Minitest::Test
     cli_empty = Askcii::CLI.new([])
     cli_empty.parse!
     assert_equal '', cli_empty.prompt
-    assert cli_empty.show_usage?
+    # Usage logic is now handled in Application class, not CLI
+    refute cli_empty.show_usage?
   end
 
   def test_cli_option_parsing
